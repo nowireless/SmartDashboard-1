@@ -7,7 +7,10 @@ import edu.wpi.first.smartdashboard.properties.Property;
 import edu.wpi.first.smartdashboard.types.DataType;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import javax.swing.JPanel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.*;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -26,7 +29,7 @@ public class LinePlot extends AbstractValueWidget {
       = new IntegerProperty(this, "Buffer Size (samples)", 5000);
   public final BooleanProperty clear = new BooleanProperty(this, "Clear Graph", false);
   
-  JPanel m_chartPanel;
+  ChartPanel m_chartPanel;
   XYSeries m_data;
   XYDataset m_dataset;
   JFreeChart m_chart;
@@ -54,6 +57,17 @@ public class LinePlot extends AbstractValueWidget {
     m_chartPanel = new ChartPanel(chart);
     m_chartPanel.setPreferredSize(new Dimension(400, 300));
     m_chartPanel.setBackground(getBackground());
+
+    JMenuItem clearMenuItem = new JMenuItem("Clear");
+    clearMenuItem.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        if ("Clear" == e.getActionCommand()) {
+          m_data.clear();
+        }
+      }
+    });
+    m_chartPanel.getPopupMenu().add(clearMenuItem);
 
     add(m_chartPanel, BorderLayout.CENTER);
     revalidate();
