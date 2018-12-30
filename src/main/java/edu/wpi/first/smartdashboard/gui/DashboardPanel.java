@@ -93,6 +93,9 @@ public class DashboardPanel extends JPanel {
   public ITable getTable() {
     return table;
   }
+  public Map<String, Widget> getFields() {
+    return fields;
+  }
 
   @Override
   public synchronized void addMouseListener(MouseListener l) {

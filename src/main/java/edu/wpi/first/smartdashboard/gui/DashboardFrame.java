@@ -94,6 +94,11 @@ public class DashboardFrame extends JFrame {
     return INSTANCE;
   }
 
+  public Map<String, Widget> getSmartdashboardFields() {
+    return smartDashboardPanel.getFields();
+  }
+
+
   /**
    * Initializes the frame.
    *
