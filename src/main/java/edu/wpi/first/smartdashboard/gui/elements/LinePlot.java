@@ -10,8 +10,6 @@ import edu.wpi.first.smartdashboard.robot.Robot;
 import edu.wpi.first.smartdashboard.types.DataType;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Map;
 import javax.swing.*;
 
@@ -37,6 +35,7 @@ public class LinePlot extends AbstractValueWidget {
   public final IntegerProperty pollPeriod = new IntegerProperty(this, "Poll Rate (ms)", kDefaultPollingPeriodMS);
 
   private String m_key;
+  private boolean m_paused = false;
   private Object m_lock = new Object();
   private boolean m_polling = false;
   private int m_pollingPeriod = kDefaultPollingPeriodMS;
@@ -44,17 +43,19 @@ public class LinePlot extends AbstractValueWidget {
     @Override
     public void run() {
       while(true) {
-        double period;
+        double period = kDefaultPollingPeriodMS;
+
         synchronized (m_lock) {
-          // Get out if not polling
-          if(!m_polling) continue;
-          period = m_pollingPeriod;
+          // Get out if not polling or is paused
+          if(m_polling && !m_paused) {
+            period = m_pollingPeriod;
 
-          System.out.println("Polling");
+            System.out.println("Polling");
 
-          if(Robot.getTable().containsKey(m_key)) {
-            double value = Robot.getTable().getNumber(m_key, 0);
-            updateDataSet(value);
+            if(Robot.getTable().containsKey(m_key)) {
+              double value = Robot.getTable().getNumber(m_key, 0);
+              updateDataSet(value);
+            }
           }
         }
 
@@ -97,15 +98,25 @@ public class LinePlot extends AbstractValueWidget {
     m_chartPanel.setBackground(getBackground());
 
     JMenuItem clearMenuItem = new JMenuItem("Clear");
-    clearMenuItem.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        if ("Clear" == e.getActionCommand()) {
-          m_data.clear();
-        }
+    clearMenuItem.addActionListener(e -> {
+      synchronized (m_lock) {
+        m_data.clear();
       }
     });
     m_chartPanel.getPopupMenu().add(clearMenuItem);
+
+    JMenuItem pauseMenuItem = new JMenuItem("Pause");
+    pauseMenuItem.addActionListener(e -> {
+      synchronized (m_lock) {
+        m_paused = !m_paused;
+        if (m_paused) {
+          pauseMenuItem.setText("UnPause");
+        } else {
+          pauseMenuItem.setText("Pause");
+        }
+      }
+    });
+    m_chartPanel.getPopupMenu().add(pauseMenuItem);
 
     add(m_chartPanel, BorderLayout.CENTER);
     revalidate();
@@ -123,10 +134,10 @@ public class LinePlot extends AbstractValueWidget {
 
   @Override
   public void setValue(double value) { //TODO make sample in thread instead of relying on set
-    // Ignore updates if polling
-    if(m_polling) return;
-
     synchronized (m_lock) {
+      // Ignore updates if polling or paused
+      if(m_polling || m_paused) return;
+
       updateDataSet(value);
     }
   }
